@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+*.xlsx
+anacom_ited_cache/
+distritos_raw.txt
