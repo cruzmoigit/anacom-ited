@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  anacom-ited:
+    build: .
+    image: anacom-ited:latest
+    container_name: anacom-ited
+    ports:
+      - "8765:8765"
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Persistência do cache de PDFs (opcional)
+      - anacom_cache:/tmp/anacom_ited_cache
+
+volumes:
+  anacom_cache:

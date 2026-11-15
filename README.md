@@ -63,6 +63,25 @@ anacom-ited/
 - Os PDFs são cacheados em `%TEMP%/anacom_ited_cache`.
 - A paginação do ANACOM usa o parâmetro `pagina=N` sobre a URL de resultados.
 
+## Deploy com Docker (x86 — Windows/Linux)
+
+Construir e correr:
+
+```bash
+docker build -t anacom-ited .
+docker run -d --name anacom-ited -p 8765:8765 anacom-ited
+```
+
+Ou com docker-compose:
+
+```bash
+docker compose up -d --build
+```
+
+Aceder em `http://localhost:8765`.
+
+A imagem base é `python:3.11-slim` (compatível com x86_64 em Windows via Docker Desktop e em Linux).
+
 ## Licença
 
 Uso pessoal/educacional.

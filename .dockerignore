@@ -1,0 +1,12 @@
+__pycache__
+*.pyc
+*.pyo
+*.xlsx
+.git
+.gitignore
+README.md
+Dockerfile
+docker-compose.yml
+anacom_ited_cache/
+distritos_raw.txt
+*.pdf

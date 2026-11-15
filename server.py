@@ -1,4 +1,4 @@
-import json, os, re, time, threading, urllib.parse
+import json, os, re, time, threading, urllib.parse, tempfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from datetime import date, timedelta
 import requests
@@ -8,7 +8,7 @@ from openpyxl.styles import Font
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DIST_FILE = os.path.join(BASE_DIR, "distritos.json")
-CACHE_DIR = os.path.join(os.environ.get("TEMP", "."), "anacom_ited_cache")
+CACHE_DIR = os.path.join(tempfile.gettempdir(), "anacom_ited_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 
 with open(DIST_FILE, encoding="utf-8") as f:
