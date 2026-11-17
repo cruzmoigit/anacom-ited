@@ -1,7 +1,7 @@
 import json, os, re, time, threading, urllib.parse, tempfile
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from datetime import date, timedelta
-import requests
+import httpx
 from pypdf import PdfReader
 import openpyxl
 from openpyxl.styles import Font
@@ -22,9 +22,8 @@ UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 
 
 
 def new_session():
-    s = requests.Session()
-    s.headers.update({"User-Agent": UA})
-    s.get(FORM_URL, timeout=60)
+    s = httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)
+    s.get(FORM_URL)
     return s
 
 
@@ -114,7 +113,7 @@ def parse_results(html):
 def fetch_all_results(s, distrito, concelho, ini, fim):
     pairs = build_body(distrito, concelho, ini, fim)
     # first page
-    r = s.post(POST_URL, data=pairs, timeout=90, headers={"Referer": FORM_URL, "Content-Type": "application/x-www-form-urlencoded"})
+    r = s.post(POST_URL, content=pairs, timeout=90, headers={"Referer": FORM_URL, "Content-Type": "application/x-www-form-urlencoded"})
     r.encoding = "iso-8859-15"
     total, results, cur, tot_pages = parse_results(r.text)
     all_results = list(results)
@@ -124,7 +123,7 @@ def fetch_all_results(s, distrito, concelho, ini, fim):
     page = 1
     while page < tot_pages:
         page += 1
-        url = r.url.split("#")[0] + "&pagina=" + str(page)
+        url = str(r.url).split("#")[0] + "&pagina=" + str(page)
         try:
             rr = s.get(url, timeout=90, headers={"Referer": FORM_URL})
             rr.encoding = "iso-8859-15"
