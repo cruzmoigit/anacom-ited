@@ -107,7 +107,13 @@ $('btnPesquisar').addEventListener('click', ()=>{
   setStatus('A pesquisar...', true);
   const body = {distrito:$('distrito').value, concelho:$('concelho').value, semanas:semanasSel};
   fetch('/api/pesquisar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-  .then(r=>r.json()).then(d=>{
+  .then(async r=>{
+    const txt = await r.text();
+    let d;
+    try { d = JSON.parse(txt); } catch(e){ throw new Error('Resposta inválida do servidor: '+txt.slice(0,300)); }
+    if(!r.ok || d.erro){ throw new Error(d.erro || ('HTTP '+r.status)); }
+    return d;
+  }).then(d=>{
     setStatus('Pesquisa concluída: '+d.total+' resultados');
     lastResults = d.resultados || [];
     const tbody=$('tblResultados').querySelector('tbody'); tbody.innerHTML='';
@@ -119,14 +125,20 @@ $('btnPesquisar').addEventListener('click', ()=>{
     $('totalRes').textContent = '('+d.total+')';
     $('cardResultados').style.display='block';
     $('cardExtraidos').style.display='none';
-  }).catch(e=>setStatus('Erro: '+e));
+  }).catch(e=>setStatus('Erro: '+e.message));
 });
 
 $('btnExtrair').addEventListener('click', ()=>{
   if(!lastResults.length){ setStatus2('Sem resultados'); return; }
   setStatus2('A descarregar e extrair PDFs...', true);
   fetch('/api/extrair',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:lastResults})})
-  .then(r=>r.json()).then(d=>{
+  .then(async r=>{
+    const txt = await r.text();
+    let d;
+    try { d = JSON.parse(txt); } catch(e){ throw new Error('Resposta inválida do servidor: '+txt.slice(0,300)); }
+    if(!r.ok || d.erro){ throw new Error(d.erro || ('HTTP '+r.status)); }
+    return d;
+  }).then(d=>{
     setStatus2('Processados: '+d.processados+' | Extraídos (≥3 fogos): '+d.extraidos);
     const tbody=$('tblExtraidos').querySelector('tbody'); tbody.innerHTML='';
     (d.dados||[]).forEach(r=>{
@@ -136,7 +148,7 @@ $('btnExtrair').addEventListener('click', ()=>{
     });
     $('totalExt').textContent = '('+(d.dados?d.dados.length:0)+')';
     $('cardExtraidos').style.display='block';
-  }).catch(e=>setStatus2('Erro: '+e));
+  }).catch(e=>setStatus2('Erro: '+e.message));
 });
 
 $('btnExportar').addEventListener('click', ()=>{

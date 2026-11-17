@@ -293,47 +293,56 @@ class Handler(BaseHTTPRequestHandler):
             body = json.loads(raw.decode("utf-8")) if raw else {}
         except Exception:
             body = {}
-        if path == "/api/pesquisar":
-            distrito = body.get("distrito", "")
-            concelho = body.get("concelho", "")
-            semanas = int(body.get("semanas", 1))
-            hoje = date.today()
-            ini = hoje - timedelta(days=semanas * 7)
-            fim = hoje
-            s = new_session()
-            total, results, tot_pages = fetch_all_results(s, distrito, concelho, ini, fim)
-            resp = {
-                "total": total,
-                "paginas": tot_pages,
-                "resultados": results,
-                "intervalo": {"de": str(ini), "ate": str(fim)},
-            }
-            self._send(200, "application/json; charset=utf-8", json.dumps(resp, ensure_ascii=False).encode("utf-8"))
-            return
-        if path == "/api/extrair":
-            items = body.get("items", [])
-            s = new_session()
-            extracted = []
-            errors = []
-            for it in items:
-                pk = it.get("termo_pk")
-                href = it.get("href", "")
-                try:
-                    pathpdf = download_pdf(s, href, pk)
-                    info = parse_pdf(pathpdf)
-                    info["termo_pk"] = pk
-                    if info["num_fogos"] >= 3:
-                        extracted.append(info)
-                except Exception as e:
-                    errors.append({"termo_pk": pk, "erro": str(e)})
-                time.sleep(0.3)
-            # save for export
-            with open(os.path.join(CACHE_DIR, "last_extraction.json"), "w", encoding="utf-8") as f:
-                json.dump(extracted, f, ensure_ascii=False, indent=2)
-            resp = {"extraidos": len(extracted), "processados": len(items), "erros": errors, "dados": extracted}
-            self._send(200, "application/json; charset=utf-8", json.dumps(resp, ensure_ascii=False).encode("utf-8"))
-            return
-        self._send(404, "text/plain", b"Not found")
+        try:
+            if path == "/api/pesquisar":
+                distrito = body.get("distrito", "")
+                concelho = body.get("concelho", "")
+                semanas = int(body.get("semanas", 1))
+                hoje = date.today()
+                ini = hoje - timedelta(days=semanas * 7)
+                fim = hoje
+                s = new_session()
+                total, results, tot_pages = fetch_all_results(s, distrito, concelho, ini, fim)
+                resp = {
+                    "total": total,
+                    "paginas": tot_pages,
+                    "resultados": results,
+                    "intervalo": {"de": str(ini), "ate": str(fim)},
+                }
+                self._send(200, "application/json; charset=utf-8", json.dumps(resp, ensure_ascii=False).encode("utf-8"))
+                return
+            if path == "/api/extrair":
+                items = body.get("items", [])
+                s = new_session()
+                extracted = []
+                errors = []
+                for it in items:
+                    pk = it.get("termo_pk")
+                    href = it.get("href", "")
+                    try:
+                        pathpdf = download_pdf(s, href, pk)
+                        info = parse_pdf(pathpdf)
+                        info["termo_pk"] = pk
+                        if info["num_fogos"] >= 3:
+                            extracted.append(info)
+                    except Exception as e:
+                        errors.append({"termo_pk": pk, "erro": str(e)})
+                    time.sleep(0.3)
+                # save for export
+                with open(os.path.join(CACHE_DIR, "last_extraction.json"), "w", encoding="utf-8") as f:
+                    json.dump(extracted, f, ensure_ascii=False, indent=2)
+                resp = {"extraidos": len(extracted), "processados": len(items), "erros": errors, "dados": extracted}
+                self._send(200, "application/json; charset=utf-8", json.dumps(resp, ensure_ascii=False).encode("utf-8"))
+                return
+            self._send(404, "text/plain", b"Not found")
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            err = {"erro": str(e), "tipo": type(e).__name__}
+            try:
+                self._send(500, "application/json; charset=utf-8", json.dumps(err, ensure_ascii=False).encode("utf-8"))
+            except Exception:
+                pass
 
     def log_message(self, *args):
         pass
