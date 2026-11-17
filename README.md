@@ -20,12 +20,12 @@ Aplicação web (Python + HTML/JS) que permite pesquisar termos de responsabilid
 ## Requisitos
 
 - Python 3.10+
-- Dependências: `requests`, `pypdf`, `openpyxl` (instaladas via `pip`).
+- Dependências: `httpx`, `pypdf`, `openpyxl` (instaladas via `pip`).
 
 ## Instalação
 
 ```bash
-pip install requests pypdf openpyxl
+pip install httpx pypdf openpyxl
 ```
 
 ## Execução
@@ -41,7 +41,7 @@ Abrir no browser: `http://127.0.0.1:8765`
 
 ```
 anacom-ited/
-├── server.py          # backend (http.server + requests + pypdf + openpyxl)
+├── server.py          # backend (http.server + httpx + pypdf + openpyxl)
 ├── distritos.json     # mapeamento Distrito -> Concelhos (extraído do site ANACOM)
 └── static/
     └── index.html     # frontend

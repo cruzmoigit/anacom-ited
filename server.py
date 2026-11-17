@@ -340,7 +340,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port = 8765
-    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"Servidor a correr em http://127.0.0.1:{port}")
+    host = os.environ.get("HOST", "0.0.0.0")
+    port = int(os.environ.get("PORT", "8765"))
+    httpd = ThreadingHTTPServer((host, port), Handler)
+    print(f"Servidor a correr em http://{host}:{port}", flush=True)
     httpd.serve_forever()
