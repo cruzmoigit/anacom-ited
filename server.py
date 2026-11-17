@@ -1,4 +1,4 @@
-import json, os, re, time, threading, urllib.parse, tempfile
+import json, os, re, time, threading, urllib.parse, tempfile, uuid
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 from datetime import date, timedelta
 import httpx
@@ -21,9 +21,26 @@ POST_URL = "https://www.anacom.pt/eh/index.jsp?categoryId=336799&channel="
 UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 
+import logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger("anacom")
+
+def _retry(fn, attempts=3, base_delay=1.0):
+    last = None
+    for i in range(attempts):
+        try:
+            return fn()
+        except Exception as e:
+            last = e
+            log.warning("tentativa %d/%d falhou: %s", i + 1, attempts, e)
+            if i < attempts - 1:
+                time.sleep(base_delay * (2 ** i))
+    raise last
+
 def new_session():
-    s = httpx.Client(headers={"User-Agent": UA}, timeout=60, follow_redirects=True)
-    s.get(FORM_URL)
+    s = httpx.Client(headers={"User-Agent": UA}, timeout=httpx.Timeout(120.0, connect=30.0), follow_redirects=True)
+    _retry(lambda: s.get(FORM_URL))
+    log.info("sessao ANACOM criada")
     return s
 
 
@@ -115,7 +132,12 @@ def fetch_all_results(s, distrito, concelho, ini, fim):
     # first page
     r = s.post(POST_URL, content=pairs, timeout=90, headers={"Referer": FORM_URL, "Content-Type": "application/x-www-form-urlencoded"})
     r.encoding = "iso-8859-15"
+    log.info("POST status=%s url=%s len=%d", r.status_code, r.url, len(r.text))
+    # debug: procurar indicadores de erro/bloqueio na resposta
+    snippet = r.text[:500].replace("\n", " ")
+    log.info("resposta snippet: %s", snippet)
     total, results, cur, tot_pages = parse_results(r.text)
+    log.info("parse_results: total=%d resultados=%d paginas=%d", total, len(results), tot_pages)
     all_results = list(results)
     # follow pages: the form resubmission with same params but page number?
     # ANACOM pagination uses GET with modo=resultado and a 'pagina' param? Let's inspect.
